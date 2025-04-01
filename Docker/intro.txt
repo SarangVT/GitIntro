@@ -1,0 +1,165 @@
+Issues solved by docker:
+#Problem: It works on my machine.
+1. Versioning problem in dependencies and tech stack.
+2. If we are using CLI commands, then commands on MacOS or Linux wouldn't work on Windows.
+3. But, if teams are larger and changing rapidly, it is not feasible, to set up individually.
+
+Docker Container: Single bundle: Dependencies, Code.
+We don't have to install dependencies there, and setup environment.
+But we don't directly share container but Docker Image.
+The docker containers and images are far lightweight than virtual machine.
+It will not make us change our system versions of dependencies.
+We can work on different versions, of same tech stack on different application.
+
+Docker Image: Instructions to build a container. A blueprint like class for objects.
+
+E.g. docker run -it ubuntu
+Fetches ubuntu image from Dockerhub(Like Github), then we can do anything, its done in that docker container, isolated from our system.
+Docker randomly gives names to containers.
+
+Docker commands:
+
+docker run IMAGE_NAME
+It just gives all background tasks, it did in terminal.
+docker run -it IMAGE_NAME
+Helps us access the container terminal.
+
+docker ps -a
+Gives details of all containers in our system.
+docker ps
+Gives details of running containers
+
+Options to start docker containers:
+docker start CONTAINER_ID
+docker start CONTAINER_NAME
+docker stop IMAGE_NAME
+
+docker rmi IMAGE_NAME
+docker rm CONTAINER_NAME
+
+For deleting image, we have to remove its all containers first.
+
+Image have layers, so caches if we use different versions of any image.
+docker run mysql
+docker run mysql:8.0
+docker run IMAGE_NAME:version_name
+
+docker run -d IMAGE_NAME
+Detached mode flag -d for detaching from the terminal session, -e for environemnt variables.
+
+Docker Image Layers:
+Container
+Layer 2
+Layer 1
+Base Layer (Linux, Debian based)
+
+First 3 layers are immutable, read-only.
+Only container-layer is changed by us.
+
+PORT Binding:
+1. We can map our Machine's PORT to the container's PORT.
+2. docker run -p8080:3306 IMAGE_NAME  (LOCALHOST_PORT:CONTAINER_PORT)
+3. If we bind a port with one of our container, then we can't bind that same port with our another container.
+
+Troubleshoot commands:
+docker logs CONTAINER_ID
+docker exec -it CONTAINER_ID/bin/bash (For bash)
+docker exec -it CONTAINER_ID/bin/sh (For shell)
+
+Docker vs VM:
+Every device has hardware layer, host OS kernel and application layer.
+So, Virtual Machine, virtualizes HOST OS Kernel and application layer.
+But docker, only virtualizes Application layer, so less overhead, less size.
+
+Developing with Docker:
+
+Docker Network:
+Docker has ability to create a network without any port of localhost.
+docker network ls
+docker network create NETWORK_NAME
+
+Test Example:
+docker run -d -p27017:27017 --name mongo --network mongo-network -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=qwerty mongo
+
+docker run -d -p8081:8081 --name mongo-express --network mongo-network -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin -e ME_CONFIG_MONGODB_ADMINPASSWORD=qwerty -e ME_CONFIG_MONGODB_URL="mongodb://admin:qwerty@mongo:27017" mongo-express
+
+Docker-Compose: Tool for defining and running multi-container applications, we can put all our terminal commands in one .yaml file and run containers. "Yet Another MarkUp Language"
+
+version: "3.6"
+
+services:
+    mongo:
+        image: mongo
+        ports:
+        - 27017:27017
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: qwerty
+
+    mongo-express:
+        image:mongo-express
+        ports:
+        - 8081:8081
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+            ME_CONFIG_MONGODB_ADMINPASSWORD: pass
+            ME_CONFIG_MONGODB_URL: mongodb://admin:qwerty@mongo:27017/
+
+
+We can write either this MONGO_INITDB_ROOT_USERNAME: admin or - MONGO_INITDB_ROOT_USERNAME=admin
+
+
+To create containers from docker-compose:
+
+docker compose -f fileName.yaml up -d   //Create
+docker compose -f fileName.yaml down    //Delete
+
+We have no network option in docker-compose, as it by default creates a docker-network, and then create container in that
+
+Dockerizing our App:
+Jenkins, is a pipeline, by which we dockerize our application into docker image for publshing it.
+
+DockerFile Instructions:
+FROM base_image_the_previous_layers
+WORKDIR from_where_all_commands_will_run
+
+COPY files_path
+RUN commands_to_execute
+
+CMD default_single_command_container_using_this_image_will_run_eg_npm_start
+
+EXPOSE port_number
+ENV name value
+
+To build in docker
+docker build -t testapp:1.0 .
+
+We can login in terminal and then we can push our repo in docker and build it and push to repo on dockerhub.
+
+Docker Volume:
+Volumes are persistent data stores for containers.
+Speciality is we can map it to multiple containers, and persists even after container is deleted on our local machine.
+
+docker volume create VOL_NAME   //Attaches to Default dir in windows in ProgramData and var/lib in MacOS and Linux
+docker volume rm VOL_NAME
+
+Named Volumes
+docker run -v VOL_NAME:CONTAINER_DIR
+
+Anonymous Volumes
+docker run -v MOUNT_PATH
+
+Bind Mount  //Done by our host OS, above two managed by docker
+docker run -v HOST_DIR:CONTAINER_DIR
+
+Clears all unused volumes, usually anonymous volumes
+docker volume prune
+
+Docker Network
+Drivers:
+1. Bridge: They can interact with all containers, external env, host env.
+    Custom: Don't require additional port for communication between containers.
+    Default: Requires
+
+2. Host: Same network as host, no personal IP Address
+3. Null: Completely isolated from other containers and host env.
